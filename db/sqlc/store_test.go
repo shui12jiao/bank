@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -12,6 +13,8 @@ func TestTransferTx(t *testing.T) {
 
 	accountF := createRandomAccount(t)
 	accountT := createRandomAccount(t)
+
+	fmt.Println(">>>before:", accountF.Balance, accountT.Balance) //-------------------------------------------->
 
 	//run a concurrent transfer transacton
 	n := 5
@@ -33,7 +36,9 @@ func TestTransferTx(t *testing.T) {
 		}()
 	}
 
-	//check results and errs
+	//check results
+	existed := make(map[int]bool)
+
 	for i := 0; i < n; i++ {
 		err := <-errs
 		require.NoError(t, err)
@@ -74,7 +79,38 @@ func TestTransferTx(t *testing.T) {
 		_, err = store.GetEntry(context.Background(), entryT.ID)
 		require.NoError(t, err)
 
-		//TODO: check accounts'balance
+		//check accounts
+		fromAccount := result.FromAccount
+		require.NotEmpty(t, fromAccount)
+		require.Equal(t, fromAccount.ID, accountF.ID)
 
+		toAccount := result.ToAccount
+		require.NotEmpty(t, toAccount)
+		require.Equal(t, toAccount.ID, accountT.ID)
+
+		//check accounts'balance
+		fmt.Println(">>>tx:", fromAccount.Balance, toAccount.Balance) //---------------------------------------------------->
+		diff1 := accountF.Balance - fromAccount.Balance
+		diff2 := toAccount.Balance - accountT.Balance
+		require.Equal(t, diff1, diff2)
+		require.True(t, diff1 > 0)
+		require.True(t, diff1%amount == 0)
+
+		k := int(diff1 / amount)
+		require.True(t, k >= 1 && k <= n)
+		require.NotContains(t, existed, k)
+		existed[k] = true
 	}
+
+	//check the final updated balances
+	updatedAccountF, err := testQueries.GetAccount(context.Background(), accountF.ID)
+	require.NoError(t, err)
+
+	updatedAccountT, err := testQueries.GetAccount(context.Background(), accountT.ID)
+	require.NoError(t, err)
+
+	require.Equal(t, updatedAccountF.Balance, accountF.Balance-amount*int64(n))
+	require.Equal(t, updatedAccountT.Balance, accountT.Balance+amount*int64(n))
+
+	fmt.Println(">>>after:", updatedAccountF.Balance, updatedAccountT.Balance) //---------------------------------------------------->
 }
