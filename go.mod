@@ -1,6 +1,6 @@
 module github.com/shui12jiao/my_simplebank
 
-go 1.13
+go 1.17
 
 require (
 	github.com/gin-gonic/gin v1.7.7 // indirect
