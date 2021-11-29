@@ -1,7 +1,14 @@
-POST http://192.168.31.179:8080/accounts HTTP/1.1
+###
+POST  http://192.168.31.179:8080/accounts/ HTTP/1.1
 Content-Type: application/json
 
 {
-    "owner": "Me",
-    "currency": "cad"
+    "owner": "Hua Zi",
+    "currency": "EUR"
 }
+
+###
+GET  http://192.168.31.179:8080/accounts/0 HTTP/1.1
+
+###
+GET  http://192.168.31.179:8080/accounts?page_id=1&page_size=7 HTTP/1.1
