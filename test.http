@@ -8,7 +8,15 @@ Content-Type: application/json
 }
 
 ###
-GET  http://192.168.31.179:8080/accounts/0 HTTP/1.1
+GET  http://192.168.31.179:8080/accounts/1 HTTP/1.1
 
 ###
 GET  http://192.168.31.179:8080/accounts?page_id=1&page_size=7 HTTP/1.1
+
+###
+PATCH   http://192.168.31.179:8080/accounts/1 HTTP/1.1
+Content-Type: application/json
+
+{
+    "balance": 0
+}
