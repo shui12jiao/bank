@@ -3,7 +3,7 @@ POST  http://192.168.31.179:8080/accounts/ HTTP/1.1
 Content-Type: application/json
 
 {
-    "owner": "Hua Zi",
+    "owner": "Jia/",
     "currency": "EUR"
 }
 
