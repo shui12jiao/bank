@@ -485,6 +485,19 @@ func TestDeleteAccountApi(t *testing.T) {
 			},
 		},
 		{
+			name:      "NotFound",
+			accountID: account.ID,
+			buildStubs: func(store *mockdb.MockStore) {
+				store.EXPECT().
+					DeleteAccount(gomock.Any(), gomock.Eq(account.ID)).
+					Times(1).
+					Return(sql.ErrNoRows)
+			},
+			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
+				require.Equal(t, http.StatusNotFound, recorder.Code)
+			},
+		},
+		{
 			name:      "InternetError",
 			accountID: account.ID,
 			buildStubs: func(store *mockdb.MockStore) {
