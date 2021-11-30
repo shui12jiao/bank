@@ -20,3 +20,6 @@ Content-Type: application/json
 {
     "balance": 0
 }
+
+###
+DELETE http://192.168.31.179:8080/accounts/1 HTTP/1.1s
