@@ -1,31 +1,36 @@
 ###
 POST  http://localhost:8080/accounts/ HTTP/1.1
+Authorization: bearer v2.local.LB0nV3Y5Jgw-tCTrYGNJRVd_VMzgV0Hd-OzPndKowOaIy8x3rg9IQEBXa_AXxgCQ-CDQ6uAB4FUEixBxvf0exJLEtaf_BbsaMn3x5fO9lRa6dGZ9l7m_4g0K8LtM8hu5eSFytLcvR4s2jRkufWibGBqQVityWiFESRSp0AOWTRbD8Rf1oG7lOW5Flvs344aJ6S1M3ZVuR4-_0bn3vIyTwOm2qqRyF_XlONp9A1TXVQLpeUGAJB3Dv5FvswQOe-7Zbb8.bnVsbA
 Content-Type: application/json
 
 {
-    "owner": "xstgtr",
-    "currency": "CAD"
+    "currency": "EUR"
 }
 
 ###
-GET  http://localhost:8080/accounts/30 HTTP/1.1
+GET  http://localhost:8080/accounts/112 HTTP/1.1
+Authorization: bearer v2.local.ECrQ29DJrmpZPiyqKqItsDyeC77o-ZS3x_d7iVVAnZff-NFQeTwQVj6x1naQbo6f2VzQQPLAztmvP7dxItiwW_5K0gMSlRcvndvAvv-Ig3TI7tSMaSgfKrStx_aRBRIeNb2IcgAOk0tIYDVu_pednng2-QclWLugIve4x9yp4DQ8DN8WS6SJynZ3jC1yofxKRCVFNDpKmGlGZRCeFCcYe-NbWUVRYFjBEApaL32v-VZMpvMgBsNmrget6c82zTYsAg.bnVsbA
 
 ###
 GET  http://localhost:8080/accounts?page_id=1&page_size=7 HTTP/1.1
+Authorization: bearer v2.local.LB0nV3Y5Jgw-tCTrYGNJRVd_VMzgV0Hd-OzPndKowOaIy8x3rg9IQEBXa_AXxgCQ-CDQ6uAB4FUEixBxvf0exJLEtaf_BbsaMn3x5fO9lRa6dGZ9l7m_4g0K8LtM8hu5eSFytLcvR4s2jRkufWibGBqQVityWiFESRSp0AOWTRbD8Rf1oG7lOW5Flvs344aJ6S1M3ZVuR4-_0bn3vIyTwOm2qqRyF_XlONp9A1TXVQLpeUGAJB3Dv5FvswQOe-7Zbb8.bnVsbA
 
 ###
-PATCH   http://localhost:8080/accounts/1 HTTP/1.1
+PATCH   http://localhost:8080/accounts/112 HTTP/1.1
+Authorization: bearer v2.local.ECrQ29DJrmpZPiyqKqItsDyeC77o-ZS3x_d7iVVAnZff-NFQeTwQVj6x1naQbo6f2VzQQPLAztmvP7dxItiwW_5K0gMSlRcvndvAvv-Ig3TI7tSMaSgfKrStx_aRBRIeNb2IcgAOk0tIYDVu_pednng2-QclWLugIve4x9yp4DQ8DN8WS6SJynZ3jC1yofxKRCVFNDpKmGlGZRCeFCcYe-NbWUVRYFjBEApaL32v-VZMpvMgBsNmrget6c82zTYsAg.bnVsbA
 Content-Type: application/json
 
 {
-    "balance": 0
+    "balance": 100
 }
 
 ###
 DELETE http://localhost:8080/accounts/1 HTTP/1.1
+Authorization: bearer v2.local.LB0nV3Y5Jgw-tCTrYGNJRVd_VMzgV0Hd-OzPndKowOaIy8x3rg9IQEBXa_AXxgCQ-CDQ6uAB4FUEixBxvf0exJLEtaf_BbsaMn3x5fO9lRa6dGZ9l7m_4g0K8LtM8hu5eSFytLcvR4s2jRkufWibGBqQVityWiFESRSp0AOWTRbD8Rf1oG7lOW5Flvs344aJ6S1M3ZVuR4-_0bn3vIyTwOm2qqRyF_XlONp9A1TXVQLpeUGAJB3Dv5FvswQOe-7Zbb8.bnVsbA
 
 ###
 POST http://localhost:8080/transfers HTTP/1.1
+Authorization: bearer v2.local.LB0nV3Y5Jgw-tCTrYGNJRVd_VMzgV0Hd-OzPndKowOaIy8x3rg9IQEBXa_AXxgCQ-CDQ6uAB4FUEixBxvf0exJLEtaf_BbsaMn3x5fO9lRa6dGZ9l7m_4g0K8LtM8hu5eSFytLcvR4s2jRkufWibGBqQVityWiFESRSp0AOWTRbD8Rf1oG7lOW5Flvs344aJ6S1M3ZVuR4-_0bn3vIyTwOm2qqRyF_XlONp9A1TXVQLpeUGAJB3Dv5FvswQOe-7Zbb8.bnVsbA
 Content-Type: application/json
 
 {
@@ -40,10 +45,10 @@ POST http://localhost:8080/users HTTP/1.1
 Content-Type: application/json
 
 {
-    "username": "Niko",
-    "password":"1008611",
-    "full_name":"Ding Zhen",
-    "email":"10081@gmail.com"
+    "username": "Tom",
+    "password":"secret",
+    "full_name":"Xiao ming",
+    "email":"tom@gmail.com"
 }
 
 ###
@@ -51,6 +56,6 @@ POST http://localhost:8080/users/login HTTP/1.1
 Content-Type: application/json
 
 {
-    "username": "Niko",
-    "password": "1008611"
+    "username": "Tom",
+    "password": "secret"
 }
