@@ -17,11 +17,11 @@ jobs:
       - name: Login to ACR
         uses: azure/docker-login@v1
         with:
-          login-server: contoso.azurecr.io
+          login-server: simplebank.azurecr.io
           username: ${{ secrets.REGISTRY_USERNAME }}
           password: ${{ secrets.REGISTRY_PASSWORD }}
 
       - name: Build image to ACR
         run: |
-          docker build . -t contoso.azurecr.io/simplebank:${{ github.sha }}
-          docker push contoso.azurecr.io/simplebank:${{ github.sha }}
+          docker build . -t simplebank.azurecr.io/simplebank:${{ github.sha }}
+          docker push simplebank.azurecr.io/simplebank:${{ github.sha }}
