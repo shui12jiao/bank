@@ -23,10 +23,6 @@ jobs:
           password: ${{ secrets.REGISTRY_PASSWORD }}
 
       - name: Build image to ACR
-        env:
-          ACR_REGISTRY: ${{ steps.login-acr.outputs.registry }}
-          ACR_REPOSITORY: simplebank
-          IMAGE_TAG: ${{ github.sha }}
         run: |
-          docker build -t $ACR_REGISTRY/$ACR_REPOSITORY:$IMAGE_TAG .
-          docker push $ACR_REGISTRY/$ACR_REPOSITORY:$IMAGE_TAG
+          docker build . -t contoso.azurecr.io/simplebank:${{ github.sha }}
+          docker push contoso.azurecr.io/simplebank:${{ github.sha }}
