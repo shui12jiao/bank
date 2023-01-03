@@ -31,13 +31,19 @@ func NewServer(config util.Config, store db.Store) (*Server, error) {
 		tokenMaker: tokenMaker,
 	}
 
+	registerValidation()
+	server.setupRouter()
+	return server, nil
+}
+
+func registerValidation() {
 	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
 		v.RegisterValidation("currency", validCurrency)
+		v.RegisterValidation("username", validUsername)
+		v.RegisterValidation("password", validPassword)
+		v.RegisterValidation("full_name", validFullName)
+		v.RegisterValidation("email", validEmail)
 	}
-
-	server.setupRouter()
-
-	return server, nil
 }
 
 func (server *Server) setupRouter() {

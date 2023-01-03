@@ -33,9 +33,9 @@ func main() {
 	}
 
 	store := db.NewStore(conn)
-	// go runHTTPServer(config, store)
-	go runGatewayServer(config, store)
-	runGRPCServer(config, store)
+	runHTTPServer(config, store)
+	// go runGatewayServer(config, store)
+	// runGRPCServer(config, store)
 }
 
 func runHTTPServer(config util.Config, store db.Store) {
