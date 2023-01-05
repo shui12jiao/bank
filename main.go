@@ -7,6 +7,9 @@ import (
 	"net"
 	"net/http"
 
+	"github.com/golang-migrate/migrate/v4"
+	_ "github.com/golang-migrate/migrate/v4/database/postgres"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	_ "github.com/lib/pq"
 	"github.com/shui12jiao/my_simplebank/api"
@@ -22,20 +25,39 @@ import (
 )
 
 func main() {
+	//load config
 	config, err := util.LoadConfig(".")
 	if err != nil {
 		log.Fatal("failed to load config:", err)
 	}
-	conn, err := sql.Open(config.DBDriver, config.DBSource)
 
+	//connect to db
+	conn, err := sql.Open(config.DBDriver, config.DBSource)
 	if err != nil {
 		log.Fatal("failed to connect to db:", err)
 	}
 
+	//run migrations
+	runDatabaseMigrations(config.MigrationURL, config.DBSource)
+
+	//create store
 	store := db.NewStore(conn)
-	runHTTPServer(config, store)
-	// go runGatewayServer(config, store)
-	// runGRPCServer(config, store)
+
+	//run http/grpc/grpc-gateway server
+	// runHTTPServer(config, store)
+	go runGatewayServer(config, store)
+	runGRPCServer(config, store)
+}
+
+func runDatabaseMigrations(migrationURL, databaseSource string) {
+	m, err := migrate.New(migrationURL, databaseSource)
+	if err != nil {
+		log.Fatal("failed to create new migrate instance:", err)
+	}
+	if err = m.Up(); err != nil && err != migrate.ErrNoChange {
+		log.Fatal("failed to run migrations:", err)
+	}
+	log.Println("migrations run successfully")
 }
 
 func runHTTPServer(config util.Config, store db.Store) {
