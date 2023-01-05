@@ -3,9 +3,12 @@ package main
 import (
 	"database/sql"
 	_ "embed"
-	"log"
 	"net"
 	"net/http"
+	"os"
+
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
@@ -28,13 +31,18 @@ func main() {
 	//load config
 	config, err := util.LoadConfig(".")
 	if err != nil {
-		log.Fatal("failed to load config:", err)
+		log.Fatal().Err(err).Msg("failed to load config:")
+	}
+
+	//set up logger
+	if config.Environment == "development" {
+		log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
 	}
 
 	//connect to db
 	conn, err := sql.Open(config.DBDriver, config.DBSource)
 	if err != nil {
-		log.Fatal("failed to connect to db:", err)
+		log.Fatal().Err(err).Msg("failed to connect to db:")
 	}
 
 	//run migrations
@@ -52,52 +60,59 @@ func main() {
 func runDatabaseMigrations(migrationURL, databaseSource string) {
 	m, err := migrate.New(migrationURL, databaseSource)
 	if err != nil {
-		log.Fatal("failed to create new migrate instance:", err)
+		log.Fatal().Err(err).Msg("failed to create new migrate instance:")
 	}
-	if err = m.Up(); err != nil && err != migrate.ErrNoChange {
-		log.Fatal("failed to run migrations:", err)
+
+	err = m.Up()
+	switch err {
+	case nil:
+		log.Info().Msg("migrated up successfully")
+	case migrate.ErrNoChange:
+		log.Info().Msg("no migrations to run")
+	default:
+		log.Fatal().Err(err).Msg("failed to run migrations:")
 	}
-	log.Println("migrations run successfully")
 }
 
 func runHTTPServer(config util.Config, store db.Store) {
 	server, err := api.NewServer(config, store)
 	if err != nil {
-		log.Fatal("failed to create http server")
+		log.Fatal().Msg("failed to create http server")
 	}
 
 	err = server.Start(config.HTTPServerAddress)
 	if err != nil {
-		log.Fatal("can not start http server:", err)
+		log.Fatal().Err(err).Msg("can not start http server:")
 	}
 }
 
 func runGRPCServer(config util.Config, store db.Store) {
 	server, err := apig.NewServer(config, store)
 	if err != nil {
-		log.Fatal("failed to create grpc server")
+		log.Fatal().Msg("failed to create grpc server")
 	}
 
-	grpcServer := grpc.NewServer()
+	grpcLogger := grpc.UnaryInterceptor(apig.GRPCLogger)
+	grpcServer := grpc.NewServer(grpcLogger)
 	pb.RegisterSimpleBankServer(grpcServer, server)
 	reflection.Register(grpcServer)
 
 	listener, err := net.Listen("tcp", config.GRPCServerAddress)
 	if err != nil {
-		log.Fatal("failed to start grpc server:", err)
+		log.Fatal().Err(err).Msg("failed to start grpc server:")
 	}
 
-	log.Println("starting grpc server at", config.GRPCServerAddress)
+	log.Info().Msgf("starting grpc server at %s", config.GRPCServerAddress)
 	err = grpcServer.Serve(listener)
 	if err != nil {
-		log.Fatal("failed to start grpc server:", err)
+		log.Fatal().Err(err).Msg("failed to start grpc server:")
 	}
 }
 
 func runGatewayServer(config util.Config, store db.Store) {
 	server, err := apig.NewServer(config, store)
 	if err != nil {
-		log.Fatal("failed to create gateway server")
+		log.Fatal().Msg("failed to create gateway server")
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -112,7 +127,7 @@ func runGatewayServer(config util.Config, store db.Store) {
 	}))
 	err = pb.RegisterSimpleBankHandlerServer(ctx, grpcMux, server)
 	if err != nil {
-		log.Fatal("failed to register grpc gateway:", err)
+		log.Fatal().Err(err).Msg("failed to register grpc gateway:")
 	}
 
 	mux := http.NewServeMux()
@@ -123,12 +138,12 @@ func runGatewayServer(config util.Config, store db.Store) {
 
 	listener, err := net.Listen("tcp", config.HTTPServerAddress)
 	if err != nil {
-		log.Fatal("failed to start gateway server:", err)
+		log.Fatal().Err(err).Msg("failed to start gateway server:")
 	}
 
-	log.Println("starting gateway server at", config.HTTPServerAddress)
+	log.Info().Msgf("starting gateway server at %s", config.HTTPServerAddress)
 	err = http.Serve(listener, mux)
 	if err != nil {
-		log.Fatal("failed to start gateway server:", err)
+		log.Fatal().Err(err).Msg("failed to start gateway server:")
 	}
 }
