@@ -2,6 +2,7 @@ package apig
 
 import (
 	"context"
+	"net/http"
 	"time"
 
 	"github.com/rs/zerolog/log"
@@ -31,6 +32,46 @@ func GRPCLogger(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo
 		Int("status_code", int(statusCode)).
 		Str("status_text", statusCode.String()).
 		Dur("duration", duration).
-		Msg("request processed")
+		Msg("gRPC request processed")
 	return
+}
+
+type ResponseRecorder struct {
+	http.ResponseWriter
+	StatusCode int
+	Body       []byte
+}
+
+func (rr *ResponseRecorder) WriteHeader(code int) {
+	rr.StatusCode = code
+	rr.ResponseWriter.WriteHeader(code)
+}
+
+func (rr *ResponseRecorder) Write(b []byte) (int, error) {
+	rr.Body = b
+	return rr.ResponseWriter.Write(b)
+}
+
+func HTTPLogger(handler http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		startTime := time.Now()
+
+		rec := &ResponseRecorder{ResponseWriter: w, StatusCode: http.StatusOK}
+		handler.ServeHTTP(rec, req)
+		duration := time.Since(startTime)
+
+		logger := log.Info()
+		if rec.StatusCode >= http.StatusInternalServerError {
+			logger = log.Error().Bytes("body", rec.Body)
+		}
+
+		logger.
+			Str("protocol", "http").
+			Str("method", req.Method).
+			Str("path", req.URL.Path).
+			Int("status_code", rec.StatusCode).
+			Str("status_text", http.StatusText(rec.StatusCode)).
+			Dur("duration", duration).
+			Msg("gRPC-Gateway request processed")
+	})
 }

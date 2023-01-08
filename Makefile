@@ -24,6 +24,9 @@ migratedown:
 migratedown1:
 	migrate -path db/migration -database "$(DB_URL)" -verbose down 1
 
+redis:
+	docker run --name redis --network bank-network -p 6379:6379 -d redis:7-alpine
+
 sqlc:
 	sqlc generate
 
@@ -54,4 +57,4 @@ db_docs:
 db_schema:
 	dbml2sql --postgresql -o doc/schema.sql doc/db.dbml
 
-.PHONY: network postgres createdb dropdb migrateup migrateup1 migratedown migratedown1 sqlc test server mock proto evans db_docs db_schema 
+.PHONY: network postgres createdb dropdb migrateup migrateup1 migratedown migratedown1 sqlc redis test server mock proto evans db_docs db_schema 

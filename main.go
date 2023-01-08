@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/hibiken/asynq"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 
@@ -20,6 +21,7 @@ import (
 	db "github.com/shui12jiao/my_simplebank/db/sqlc"
 	"github.com/shui12jiao/my_simplebank/doc"
 	"github.com/shui12jiao/my_simplebank/pb"
+	"github.com/shui12jiao/my_simplebank/tasks"
 	"github.com/shui12jiao/my_simplebank/util"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
@@ -31,7 +33,7 @@ func main() {
 	//load config
 	config, err := util.LoadConfig(".")
 	if err != nil {
-		log.Fatal().Err(err).Msg("failed to load config:")
+		log.Fatal().Err(err).Msg("failed to load config")
 	}
 
 	//set up logger
@@ -42,7 +44,7 @@ func main() {
 	//connect to db
 	conn, err := sql.Open(config.DBDriver, config.DBSource)
 	if err != nil {
-		log.Fatal().Err(err).Msg("failed to connect to db:")
+		log.Fatal().Err(err).Msg("failed to connect to db")
 	}
 
 	//run migrations
@@ -51,16 +53,23 @@ func main() {
 	//create store
 	store := db.NewStore(conn)
 
+	//create task distributor and task processor
+	redisOpt := asynq.RedisClientOpt{
+		Addr: config.RedisAddress,
+	}
+	taskDistributor := tasks.NewRedisTaskDistributor(&redisOpt)
+	go runRedisTaskProcessor(redisOpt, store)
+
 	//run http/grpc/grpc-gateway server
-	// runHTTPServer(config, store)
-	go runGatewayServer(config, store)
-	runGRPCServer(config, store)
+	/* runHTTPServer(config, store) */
+	go runGatewayServer(config, store, taskDistributor)
+	runGRPCServer(config, store, taskDistributor)
 }
 
 func runDatabaseMigrations(migrationURL, databaseSource string) {
 	m, err := migrate.New(migrationURL, databaseSource)
 	if err != nil {
-		log.Fatal().Err(err).Msg("failed to create new migrate instance:")
+		log.Fatal().Err(err).Msg("failed to create new migrate instance")
 	}
 
 	err = m.Up()
@@ -70,7 +79,16 @@ func runDatabaseMigrations(migrationURL, databaseSource string) {
 	case migrate.ErrNoChange:
 		log.Info().Msg("no migrations to run")
 	default:
-		log.Fatal().Err(err).Msg("failed to run migrations:")
+		log.Fatal().Err(err).Msg("failed to run migrations")
+	}
+}
+
+func runRedisTaskProcessor(redisOpt asynq.RedisClientOpt, store db.Store) {
+	log.Info().Msgf("starting redis task processor at %s", redisOpt.Addr)
+	processor := tasks.NewRedisTaskProcessor(redisOpt, store)
+	err := processor.Start()
+	if err != nil {
+		log.Fatal().Err(err).Msg("failed to start redis task processor")
 	}
 }
 
@@ -80,14 +98,15 @@ func runHTTPServer(config util.Config, store db.Store) {
 		log.Fatal().Msg("failed to create http server")
 	}
 
+	log.Info().Msgf("starting http server at %s", config.HTTPServerAddress)
 	err = server.Start(config.HTTPServerAddress)
 	if err != nil {
-		log.Fatal().Err(err).Msg("can not start http server:")
+		log.Fatal().Err(err).Msg("can not start http server")
 	}
 }
 
-func runGRPCServer(config util.Config, store db.Store) {
-	server, err := apig.NewServer(config, store)
+func runGRPCServer(config util.Config, store db.Store, taskDistributor tasks.TaskDistributor) {
+	server, err := apig.NewServer(config, store, taskDistributor)
 	if err != nil {
 		log.Fatal().Msg("failed to create grpc server")
 	}
@@ -99,18 +118,18 @@ func runGRPCServer(config util.Config, store db.Store) {
 
 	listener, err := net.Listen("tcp", config.GRPCServerAddress)
 	if err != nil {
-		log.Fatal().Err(err).Msg("failed to start grpc server:")
+		log.Fatal().Err(err).Msg("failed to start grpc server")
 	}
 
 	log.Info().Msgf("starting grpc server at %s", config.GRPCServerAddress)
 	err = grpcServer.Serve(listener)
 	if err != nil {
-		log.Fatal().Err(err).Msg("failed to start grpc server:")
+		log.Fatal().Err(err).Msg("failed to start grpc server")
 	}
 }
 
-func runGatewayServer(config util.Config, store db.Store) {
-	server, err := apig.NewServer(config, store)
+func runGatewayServer(config util.Config, store db.Store, taskDistributor tasks.TaskDistributor) {
+	server, err := apig.NewServer(config, store, taskDistributor)
 	if err != nil {
 		log.Fatal().Msg("failed to create gateway server")
 	}
@@ -127,7 +146,7 @@ func runGatewayServer(config util.Config, store db.Store) {
 	}))
 	err = pb.RegisterSimpleBankHandlerServer(ctx, grpcMux, server)
 	if err != nil {
-		log.Fatal().Err(err).Msg("failed to register grpc gateway:")
+		log.Fatal().Err(err).Msg("failed to register grpc gateway")
 	}
 
 	mux := http.NewServeMux()
@@ -138,12 +157,12 @@ func runGatewayServer(config util.Config, store db.Store) {
 
 	listener, err := net.Listen("tcp", config.HTTPServerAddress)
 	if err != nil {
-		log.Fatal().Err(err).Msg("failed to start gateway server:")
+		log.Fatal().Err(err).Msg("failed to start gateway server")
 	}
 
 	log.Info().Msgf("starting gateway server at %s", config.HTTPServerAddress)
-	err = http.Serve(listener, mux)
+	err = http.Serve(listener, apig.HTTPLogger(mux))
 	if err != nil {
-		log.Fatal().Err(err).Msg("failed to start gateway server:")
+		log.Fatal().Err(err).Msg("failed to start gateway server")
 	}
 }
