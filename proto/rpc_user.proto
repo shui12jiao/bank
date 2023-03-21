@@ -1,0 +1,50 @@
+syntax = "proto3";
+
+package pb;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = ".;pb";
+
+message User {
+  string username = 1;
+  string full_name = 2;
+  string email = 3;
+  google.protobuf.Timestamp password_changed_at = 4;
+  google.protobuf.Timestamp created_at = 5;
+}
+
+// CreateUser
+message CreateUserRequest {
+  string username = 1;
+  string password = 2;
+  string full_name = 3;
+  string email = 4;
+}
+
+message CreateUserResponse { User user = 1; }
+
+// LoginUser
+message LoginUserRequest {
+  string username = 1;
+  string password = 2;
+}
+
+message LoginUserResponse {
+  string session_id = 1;
+  string access_token = 2;
+  google.protobuf.Timestamp access_token_expires_at = 3;
+  string refresh_token = 4;
+  google.protobuf.Timestamp refresh_token_expires_at = 5;
+  User user = 6;
+}
+
+// UpdateUser
+message UpdateUserRequest {
+  string username = 1;
+  optional string password = 2;
+  optional string full_name = 3;
+  optional string email = 4;
+}
+
+message UpdateUserResponse { User user = 1; }
