@@ -104,7 +104,7 @@ func (server *Server) CreateUser(ctx context.Context, req *pb.CreateUserRequest)
 		AfterCreateUser: func(ctx context.Context, user db.User) error {
 			opts := []asynq.Option{
 				asynq.MaxRetry(10),
-				asynq.ProcessIn(10 * time.Second),
+				asynq.ProcessIn(5 * time.Second),
 				asynq.Queue(tasks.QueueCritical),
 			}
 			return server.taskDistributor.SendVerifyEmail(ctx, &tasks.SendVerifyEmailPayload{Username: user.Username}, opts...)

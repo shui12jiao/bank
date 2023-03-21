@@ -117,23 +117,24 @@ func TestCreateUserApi(t *testing.T) {
 				require.Equal(t, http.StatusForbidden, recorder.Code)
 			},
 		},
-		{
-			name: "InvalidPassword",
-			body: gin.H{
-				"username":  user.Username,
-				"password":  "invalid#password",
-				"full_name": user.FullName,
-				"email":     user.Email,
-			},
-			buildStubs: func(store *mockdb.MockStore) {
-				store.EXPECT().
-					CreateUser(gomock.Any(), gomock.Any()).
-					Times(0)
-			},
-			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
-				require.Equal(t, http.StatusBadRequest, recorder.Code)
-			},
-		},
+		// now anyinput password with length in [6,100] is acceptable
+		// {
+		// 	name: "InvalidPassword",
+		// 	body: gin.H{
+		// 		"username":  user.Username,
+		// 		"password":  "invalid#password",
+		// 		"full_name": user.FullName,
+		// 		"email":     user.Email,
+		// 	},
+		// 	buildStubs: func(store *mockdb.MockStore) {
+		// 		store.EXPECT().
+		// 			CreateUser(gomock.Any(), gomock.Any()).
+		// 			Times(0)
+		// 	},
+		// 	checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
+		// 		require.Equal(t, http.StatusBadRequest, recorder.Code)
+		// 	},
+		// },
 		{
 			name: "ShortPassword",
 			body: gin.H{
@@ -280,7 +281,7 @@ func TestLoginUserApi(t *testing.T) {
 		}, {
 			name: "UserNotFound",
 			body: gin.H{
-				"username": "NotFound",
+				"username": "notfound",
 				"password": password,
 			},
 			buildStubs: func(store *mockdb.MockStore) {
@@ -293,21 +294,21 @@ func TestLoginUserApi(t *testing.T) {
 				require.Equal(t, http.StatusNotFound, recorder.Code)
 			},
 		},
-		{
-			name: "InvalidPassword",
-			body: gin.H{
-				"username": user.Username,
-				"password": "invalid password",
-			},
-			buildStubs: func(store *mockdb.MockStore) {
-				store.EXPECT().
-					GetUser(gomock.Any(), gomock.Any()).
-					Times(0)
-			},
-			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
-				require.Equal(t, http.StatusBadRequest, recorder.Code)
-			},
-		},
+		// {
+		// 	name: "InvalidPassword",
+		// 	body: gin.H{
+		// 		"username": user.Username,
+		// 		"password": "invalid password",
+		// 	},
+		// 	buildStubs: func(store *mockdb.MockStore) {
+		// 		store.EXPECT().
+		// 			GetUser(gomock.Any(), gomock.Any()).
+		// 			Times(0)
+		// 	},
+		// 	checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
+		// 		require.Equal(t, http.StatusBadRequest, recorder.Code)
+		// 	},
+		// },
 		{
 			name: "IncorrectPassword",
 			body: gin.H{

@@ -24,6 +24,9 @@ migratedown:
 migratedown1:
 	migrate -path db/migration -database "$(DB_URL)" -verbose down 1
 
+new_migration:
+	migrate create -ext sql -dir db/migration -seq $(name)
+
 redis:
 	docker run --name redis --network bank-network -p 6379:6379 -d redis:7-alpine
 
@@ -34,7 +37,7 @@ mock:
 	mockgen -package mockdb  -destination db/mock/store.go github.com/shui12jiao/my_simplebank/db/sqlc Store
 
 test:
-	go test -v -cover ./...
+	go test -v -cover -short ./...
 
 server:
 	go run main.go
@@ -57,4 +60,4 @@ db_docs:
 db_schema:
 	dbml2sql --postgresql -o doc/schema.sql doc/db.dbml
 
-.PHONY: network postgres createdb dropdb migrateup migrateup1 migratedown migratedown1 sqlc redis test server mock proto evans db_docs db_schema 
+.PHONY: network postgres createdb dropdb migrateup migrateup1 migratedown migratedown1 new_migration sqlc redis test server mock proto evans db_docs db_schema 

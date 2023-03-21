@@ -58,7 +58,7 @@ func main() {
 		Addr: config.RedisAddress,
 	}
 	taskDistributor := tasks.NewRedisTaskDistributor(&redisOpt)
-	go runRedisTaskProcessor(redisOpt, store)
+	go runRedisTaskProcessor(config, redisOpt, store)
 
 	//run http/grpc/grpc-gateway server
 	/* runHTTPServer(config, store) */
@@ -83,16 +83,16 @@ func runDatabaseMigrations(migrationURL, databaseSource string) {
 	}
 }
 
-func runRedisTaskProcessor(redisOpt asynq.RedisClientOpt, store db.Store) {
+func runRedisTaskProcessor(config util.Config, redisOpt asynq.RedisClientOpt, store db.Store) {
 	log.Info().Msgf("starting redis task processor at %s", redisOpt.Addr)
-	processor := tasks.NewRedisTaskProcessor(redisOpt, store)
+	processor := tasks.NewRedisTaskProcessor(redisOpt, store, util.NewGmailSender(config.EmailSenderName, config.EmailSenderAddress, config.EmailSenderPassword))
 	err := processor.Start()
 	if err != nil {
 		log.Fatal().Err(err).Msg("failed to start redis task processor")
 	}
 }
 
-func runHTTPServer(config util.Config, store db.Store) {
+func runHTTPServer(config util.Config, store db.Store, taskDistributor tasks.TaskDistributor) {
 	server, err := api.NewServer(config, store)
 	if err != nil {
 		log.Fatal().Msg("failed to create http server")
